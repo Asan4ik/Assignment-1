@@ -4,8 +4,8 @@ public class Flight {
     private String flightNumber;
     private String origin;
     private String destination;
-    private String departureTime; // Could use LocalDateTime
-    private String arrivalTime;   // Could use LocalDateTime
+    private String departureTime;
+    private String arrivalTime;
     private int capacity;
 
     public Flight() {
