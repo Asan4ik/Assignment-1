@@ -46,4 +46,13 @@ public class Booking {
     public void setBookingDate(String bookingDate) {
         this.bookingDate = bookingDate;
     }
+
+    @Override
+    public String toString() {
+        return "Booking ID: " + bookingId +
+                " | Flight: " + flight.getFlightNumber() +
+                " | Route: " + flight.getOrigin() +
+                " -> " + flight.getDestination() +
+                " | Date: " + bookingDate;
+    }
 }
