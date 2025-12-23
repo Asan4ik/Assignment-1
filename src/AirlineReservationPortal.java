@@ -4,9 +4,8 @@ import java.util.Scanner;
 
 public class AirlineReservationPortal {
 
-    private static List<Passenger> passengers = new ArrayList<>();
-    private static List<Flight> flights = new ArrayList<>();
-    private static List<Booking> bookings = new ArrayList<>();
+    private static final List<Passenger> passengers = new ArrayList<>();
+    private static final List<Flight> flights = new ArrayList<>();
 
     private static Passenger currentPassenger = null;
 
@@ -20,13 +19,13 @@ public class AirlineReservationPortal {
     public static void register() {
         scanner.nextLine();
 
-        System.out.print("Enter first name: ");
+        System.out.print("First name: ");
         String firstName = scanner.nextLine();
 
-        System.out.print("Enter last name: ");
+        System.out.print("Last name: ");
         String lastName = scanner.nextLine();
 
-        System.out.print("Enter email: ");
+        System.out.print("Email: ");
         String email = scanner.nextLine();
 
         for (Passenger p : passengers) {
@@ -36,22 +35,17 @@ public class AirlineReservationPortal {
             }
         }
 
-        Passenger passenger = new Passenger(
-                nextPassengerId++,
-                firstName,
-                lastName,
-                email
-        );
+        Passenger passenger =
+                new Passenger(nextPassengerId++, firstName, lastName, email);
 
         passengers.add(passenger);
-        System.out.println("Registration successful. You can now log in.");
+        System.out.println("Registration successful.");
     }
 
     // ================== LOGIN ==================
     public static void login() {
         scanner.nextLine();
-
-        System.out.print("Enter email: ");
+        System.out.print("Email: ");
         String email = scanner.nextLine();
 
         for (Passenger p : passengers) {
@@ -62,49 +56,43 @@ public class AirlineReservationPortal {
             }
         }
 
-        System.out.println("Passenger not found. Please register first.");
+        System.out.println("Passenger not found.");
     }
 
-    // ================== ADD FLIGHT (SYSTEM) ==================
+    // ================== ADD FLIGHT ==================
     public static void addFlight() {
         scanner.nextLine();
 
-        System.out.print("Enter flight number: ");
+        System.out.print("Flight number: ");
         String flightNumber = scanner.nextLine();
 
-        System.out.print("Enter origin: ");
+        System.out.print("Origin: ");
         String origin = scanner.nextLine();
 
-        System.out.print("Enter destination: ");
+        System.out.print("Destination: ");
         String destination = scanner.nextLine();
 
-        System.out.print("Enter departure time: ");
-        String departureTime = scanner.nextLine();
+        System.out.print("Departure time: ");
+        String dep = scanner.nextLine();
 
-        System.out.print("Enter arrival time: ");
-        String arrivalTime = scanner.nextLine();
+        System.out.print("Arrival time: ");
+        String arr = scanner.nextLine();
 
-        System.out.print("Enter capacity: ");
+        System.out.print("Capacity: ");
         int capacity = scanner.nextInt();
 
-        Flight flight = new Flight(
-                nextFlightId++,
-                flightNumber,
-                origin,
-                destination,
-                departureTime,
-                arrivalTime,
-                capacity
-        );
+        flights.add(new Flight(
+                nextFlightId++, flightNumber, origin,
+                destination, dep, arr, capacity
+        ));
 
-        flights.add(flight);
-        System.out.println("Flight added successfully.");
+        System.out.println("Flight added.");
     }
 
-    // ================== ADD BOOKING ==================
+    // ================== BOOK FLIGHT ==================
     public static void addBooking() {
         if (currentPassenger == null) {
-            System.out.println("Please log in first.");
+            System.out.println("Login first.");
             return;
         }
 
@@ -113,83 +101,125 @@ public class AirlineReservationPortal {
             return;
         }
 
-        System.out.println("\nSelect Flight:");
-        for (int i = 0; i < flights.size(); i++) {
-            Flight f = flights.get(i);
-            System.out.println((i + 1) + ". " +
-                    f.getFlightNumber() +
-                    " (" + f.getOrigin() + " -> " + f.getDestination() + ")");
-        }
+        System.out.println("Booking type:");
+        System.out.println("1. One-way");
+        System.out.println("2. Round-trip");
 
-        int flightIndex = scanner.nextInt() - 1;
-        Flight flight = flights.get(flightIndex);
+        int type = scanner.nextInt();
 
-        scanner.nextLine();
-        System.out.print("Enter booking date: ");
-        String bookingDate = scanner.nextLine();
-
-        Booking booking = currentPassenger.bookFlight(
-                flight,
-                nextBookingId++,
-                bookingDate
-        );
-
-        if (booking != null) {
-            bookings.add(booking);
-            System.out.println("Booking created successfully.");
+        if (type == 1) {
+            createOneWayBooking();
+        } else if (type == 2) {
+            createRoundTripBooking();
+        } else {
+            System.out.println("Invalid option.");
         }
     }
 
-    // ================== SHOW MY BOOKINGS ==================
+    private static void createOneWayBooking() {
+        System.out.println("Select flight:");
+        for (int i = 0; i < flights.size(); i++) {
+            Flight f = flights.get(i);
+            System.out.println((i + 1) + ". " +
+                    f.getFlightNumber() + " (" +
+                    f.getOrigin() + " -> " +
+                    f.getDestination() + ")");
+        }
+
+        int index = scanner.nextInt() - 1;
+        Flight flight = flights.get(index);
+
+        if (flight.getCapacity() <= 0) {
+            System.out.println("No seats available.");
+            return;
+        }
+
+        scanner.nextLine();
+        System.out.print("Booking date: ");
+        String bookingDate = scanner.nextLine();
+
+        flight.setCapacity(flight.getCapacity() - 1);
+
+        Booking booking = new OneWayBooking(
+                nextBookingId++, flight, currentPassenger, bookingDate
+        );
+
+        currentPassenger.addBooking(booking);
+        System.out.println("One-way booking successful.");
+    }
+
+    private static void createRoundTripBooking() {
+        System.out.println("Select outbound flight:");
+        for (int i = 0; i < flights.size(); i++) {
+            Flight f = flights.get(i);
+            System.out.println((i + 1) + ". " +
+                    f.getFlightNumber() + " (" +
+                    f.getOrigin() + " -> " +
+                    f.getDestination() + ")");
+        }
+
+        int outIndex = scanner.nextInt() - 1;
+        Flight outbound = flights.get(outIndex);
+
+        System.out.println("Select return flight:");
+        for (int i = 0; i < flights.size(); i++) {
+            Flight f = flights.get(i);
+            System.out.println((i + 1) + ". " +
+                    f.getFlightNumber() + " (" +
+                    f.getOrigin() + " -> " +
+                    f.getDestination() + ")");
+        }
+
+        int retIndex = scanner.nextInt() - 1;
+        Flight ret = flights.get(retIndex);
+
+        if (outbound.getCapacity() <= 0 || ret.getCapacity() <= 0) {
+            System.out.println("No seats available on one of the flights.");
+            return;
+        }
+
+        scanner.nextLine();
+        System.out.print("Booking date: ");
+        String bookingDate = scanner.nextLine();
+
+        outbound.setCapacity(outbound.getCapacity() - 1);
+        ret.setCapacity(ret.getCapacity() - 1);
+
+        Booking booking = new RoundTripBooking(
+                nextBookingId++, outbound, ret, currentPassenger, bookingDate
+        );
+
+        currentPassenger.addBooking(booking);
+        System.out.println("Round-trip booking successful.");
+    }
+
+
+    // ================== SHOW BOOKINGS ==================
     public static void showBookings() {
         if (currentPassenger == null) {
-            System.out.println("Please log in first.");
+            System.out.println("Login first.");
             return;
         }
 
-        List<Booking> passengerBookings = currentPassenger.getBookings();
-
-        if (passengerBookings.isEmpty()) {
-            System.out.println("You have no bookings.");
+        if (currentPassenger.getBookings().isEmpty()) {
+            System.out.println("No bookings.");
             return;
         }
 
-        System.out.println("\nYour Bookings:");
-        for (Booking booking : passengerBookings) {
+        for (Booking b : currentPassenger.getBookings()) {
             System.out.println(
-                    "Booking ID: " + booking.getBookingId() +
-                            " | Flight: " + booking.getFlight().getFlightNumber() +
-                            " | Route: " + booking.getFlight().getOrigin() +
-                            " -> " + booking.getFlight().getDestination() +
-                            " | Date: " + booking.getBookingDate()
+                    "Booking ID: " + b.getBookingId() +
+                            " | Route: " + b.getRouteDescription() +
+                            " | Date: " + b.getBookingDate()
             );
         }
     }
 
-    // ================== SHOW FLIGHTS ==================
-    public static void showFlights() {
-        if (flights.isEmpty()) {
-            System.out.println("No flights available.");
-            return;
-        }
-
-        System.out.println("\nAvailable Flights:");
-        for (int i = 0; i < flights.size(); i++) {
-            Flight f = flights.get(i);
-            System.out.println((i + 1) + ". " +
-                    f.getFlightNumber() + " | " +
-                    f.getOrigin() + " -> " +
-                    f.getDestination() +
-                    " | Capacity: " + f.getCapacity());
-        }
-    }
-
-    // ================== PASSENGER MENU ==================
+    // ================== MENU ==================
     private static void passengerMenu() {
-        System.out.println("\nPassenger Menu");
-        System.out.println("1. Book Flight");
-        System.out.println("2. View My Bookings");
-        System.out.println("3. View Flights");
+        System.out.println("\n1. Book Flight");
+        System.out.println("2. View Bookings");
+        System.out.println("3. Add Flight (Admin)");
         System.out.println("4. Logout");
 
         int input = scanner.nextInt();
@@ -197,25 +227,18 @@ public class AirlineReservationPortal {
         switch (input) {
             case 1 -> addBooking();
             case 2 -> showBookings();
-            case 3 -> showFlights();
-            case 4 -> {
-                currentPassenger = null;
-                System.out.println("Logged out.");
-            }
-            default -> System.out.println("Invalid option.");
+            case 3 -> addFlight();
+            case 4 -> currentPassenger = null;
         }
     }
 
     // ================== MAIN ==================
     public static void main(String[] args) {
-        // Preload flights (optional, for testing)
-        // addFlight();
 
         while (true) {
             if (currentPassenger == null) {
-                System.out.println("\nWelcome to Airline Reservation Portal");
-                System.out.println("1. Register");
-                System.out.println("2. Log in");
+                System.out.println("\n1. Register");
+                System.out.println("2. Login");
                 System.out.println("3. Exit");
 
                 int input = scanner.nextInt();
@@ -223,11 +246,7 @@ public class AirlineReservationPortal {
                 switch (input) {
                     case 1 -> register();
                     case 2 -> login();
-                    case 3 -> {
-                        System.out.println("Exiting system.");
-                        return;
-                    }
-                    default -> System.out.println("Invalid option.");
+                    case 3 -> System.exit(0);
                 }
             } else {
                 passengerMenu();
