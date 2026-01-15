@@ -1,12 +1,10 @@
 public abstract class Booking {
 
     protected int bookingId;
-    protected Passenger passenger;
     protected String bookingDate;
 
     public Booking(int bookingId, Passenger passenger, String bookingDate) {
         this.bookingId = bookingId;
-        this.passenger = passenger;
         this.bookingDate = bookingDate;
     }
 
@@ -16,10 +14,6 @@ public abstract class Booking {
 
     public String getBookingDate() {
         return bookingDate;
-    }
-
-    public Passenger getPassenger() {
-        return passenger;
     }
 
     public abstract String getRouteDescription();

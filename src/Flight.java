@@ -4,11 +4,11 @@ public class Flight {
     private final String flightNumber;
     private final String origin;
     private final String destination;
-    private int capacity;
+    private final int capacity;
 
-    public Flight(int flightId, String flightNumber, String origin,
-                  String destination, String departureTime,
-                  String arrivalTime, int capacity) {
+    public Flight(int flightId, String flightNumber,
+                  String origin, String destination,
+                  int capacity) {
 
         this.flightId = flightId;
         this.flightNumber = flightNumber;
@@ -35,9 +35,5 @@ public class Flight {
 
     public int getCapacity() {
         return capacity;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
     }
 }

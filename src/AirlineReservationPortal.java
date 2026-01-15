@@ -1,21 +1,14 @@
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class AirlineReservationPortal {
 
-    private static final List<Passenger> passengers = new ArrayList<>();
-    private static final List<Flight> flights = new ArrayList<>();
-
     private static Passenger currentPassenger = null;
-
-    private static int nextPassengerId = 1;
-    private static int nextFlightId = 1;
-    private static int nextBookingId = 1;
-
     private static final Scanner scanner = new Scanner(System.in);
 
-    // ================== REGISTER ==================
+    // ================= REGISTER =================
     public static void register() {
         scanner.nextLine();
 
@@ -28,38 +21,56 @@ public class AirlineReservationPortal {
         System.out.print("Email: ");
         String email = scanner.nextLine();
 
-        for (Passenger p : passengers) {
-            if (p.getEmail().equalsIgnoreCase(email)) {
-                System.out.println("Email already registered.");
-                return;
-            }
+        String sql =
+                "INSERT INTO passengers(first_name, last_name, email) VALUES (?, ?, ?)";
+
+        try (Connection con = DB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, firstName);
+            ps.setString(2, lastName);
+            ps.setString(3, email);
+            ps.executeUpdate();
+
+            System.out.println("Registration successful.");
+
+        } catch (SQLException e) {
+            System.out.println("Email already registered.");
         }
-
-        Passenger passenger =
-                new Passenger(nextPassengerId++, firstName, lastName, email);
-
-        passengers.add(passenger);
-        System.out.println("Registration successful.");
     }
 
-    // ================== LOGIN ==================
+    // ================= LOGIN =================
     public static void login() {
         scanner.nextLine();
         System.out.print("Email: ");
         String email = scanner.nextLine();
 
-        for (Passenger p : passengers) {
-            if (p.getEmail().equalsIgnoreCase(email)) {
-                currentPassenger = p;
-                System.out.println("Logged in as " + p.getFirstName());
-                return;
-            }
-        }
+        String sql = "SELECT * FROM passengers WHERE email = ?";
 
-        System.out.println("Passenger not found.");
+        try (Connection con = DB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                currentPassenger = new Passenger(
+                        rs.getInt("passenger_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("email")
+                );
+                System.out.println("Logged in as " + currentPassenger.getFirstName());
+            } else {
+                System.out.println("Passenger not found.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    // ================== ADD FLIGHT ==================
+    // ================= ADD FLIGHT =================
     public static void addFlight() {
         scanner.nextLine();
 
@@ -72,60 +83,76 @@ public class AirlineReservationPortal {
         System.out.print("Destination: ");
         String destination = scanner.nextLine();
 
-        System.out.print("Departure time: ");
-        String dep = scanner.nextLine();
-
-        System.out.print("Arrival time: ");
-        String arr = scanner.nextLine();
-
         System.out.print("Capacity: ");
         int capacity = scanner.nextInt();
 
-        flights.add(new Flight(
-                nextFlightId++, flightNumber, origin,
-                destination, dep, arr, capacity
-        ));
+        String sql =
+                "INSERT INTO flights(flight_number, origin, destination, capacity) " +
+                        "VALUES (?, ?, ?, ?)";
 
-        System.out.println("Flight added.");
+        try (Connection con = DB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, flightNumber);
+            ps.setString(2, origin);
+            ps.setString(3, destination);
+            ps.setInt(4, capacity);
+            ps.executeUpdate();
+
+            System.out.println("Flight added.");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    // ================== BOOK FLIGHT ==================
+    // ================= LOAD FLIGHTS =================
+    private static List<Flight> getFlights() {
+        List<Flight> flights = new ArrayList<>();
+
+        String sql = "SELECT * FROM flights";
+
+        try (Connection con = DB.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                flights.add(new Flight(
+                        rs.getInt("flight_id"),
+                        rs.getString("flight_number"),
+                        rs.getString("origin"),
+                        rs.getString("destination"),
+                        rs.getInt("capacity")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return flights;
+    }
+
+    // ================= BOOK FLIGHT =================
     public static void addBooking() {
         if (currentPassenger == null) {
             System.out.println("Login first.");
             return;
         }
 
+        List<Flight> flights = getFlights();
         if (flights.isEmpty()) {
             System.out.println("No flights available.");
             return;
         }
 
-        System.out.println("Booking type:");
-        System.out.println("1. One-way");
-        System.out.println("2. Round-trip");
-
-        int type = scanner.nextInt();
-
-        if (type == 1) {
-            createOneWayBooking();
-        } else if (type == 2) {
-            createRoundTripBooking();
-        } else {
-            System.out.println("Invalid option.");
-        }
-    }
-
-    private static void createOneWayBooking() {
-        System.out.println("Select flight:");
         for (int i = 0; i < flights.size(); i++) {
             Flight f = flights.get(i);
             System.out.println((i + 1) + ". " +
                     f.getFlightNumber() + " (" +
-                    f.getOrigin() + " -> " +
-                    f.getDestination() + ")");
+                    f.getOrigin() + " -> " + f.getDestination() +
+                    "), seats: " + f.getCapacity());
         }
 
+        System.out.print("Choose flight: ");
         int index = scanner.nextInt() - 1;
         Flight flight = flights.get(index);
 
@@ -136,95 +163,92 @@ public class AirlineReservationPortal {
 
         scanner.nextLine();
         System.out.print("Booking date: ");
-        String bookingDate = scanner.nextLine();
+        String date = scanner.nextLine();
 
-        flight.setCapacity(flight.getCapacity() - 1);
+        String insertBooking =
+                "INSERT INTO bookings(passenger_id, outbound_flight_id, booking_date, booking_type) " +
+                        "VALUES (?, ?, ?, 'ONE_WAY')";
 
-        Booking booking = new OneWayBooking(
-                nextBookingId++, flight, currentPassenger, bookingDate
-        );
+        String updateCapacity =
+                "UPDATE flights SET capacity = capacity - 1 WHERE flight_id = ?";
 
-        currentPassenger.addBooking(booking);
-        System.out.println("One-way booking successful.");
+        try (Connection con = DB.getConnection()) {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement b = con.prepareStatement(insertBooking);
+                 PreparedStatement c = con.prepareStatement(updateCapacity)) {
+
+                b.setInt(1, currentPassenger.getPassengerId());
+                b.setInt(2, flight.getFlightId());
+                b.setString(3, date);
+                b.executeUpdate();
+
+                c.setInt(1, flight.getFlightId());
+                c.executeUpdate();
+
+                con.commit();
+                System.out.println("Booking successful.");
+
+            } catch (SQLException e) {
+                con.rollback();
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    private static void createRoundTripBooking() {
-        System.out.println("Select outbound flight:");
-        for (int i = 0; i < flights.size(); i++) {
-            Flight f = flights.get(i);
-            System.out.println((i + 1) + ". " +
-                    f.getFlightNumber() + " (" +
-                    f.getOrigin() + " -> " +
-                    f.getDestination() + ")");
-        }
-
-        int outIndex = scanner.nextInt() - 1;
-        Flight outbound = flights.get(outIndex);
-
-        System.out.println("Select return flight:");
-        for (int i = 0; i < flights.size(); i++) {
-            Flight f = flights.get(i);
-            System.out.println((i + 1) + ". " +
-                    f.getFlightNumber() + " (" +
-                    f.getOrigin() + " -> " +
-                    f.getDestination() + ")");
-        }
-
-        int retIndex = scanner.nextInt() - 1;
-        Flight ret = flights.get(retIndex);
-
-        if (outbound.getCapacity() <= 0 || ret.getCapacity() <= 0) {
-            System.out.println("No seats available on one of the flights.");
-            return;
-        }
-
-        scanner.nextLine();
-        System.out.print("Booking date: ");
-        String bookingDate = scanner.nextLine();
-
-        outbound.setCapacity(outbound.getCapacity() - 1);
-        ret.setCapacity(ret.getCapacity() - 1);
-
-        Booking booking = new RoundTripBooking(
-                nextBookingId++, outbound, ret, currentPassenger, bookingDate
-        );
-
-        currentPassenger.addBooking(booking);
-        System.out.println("Round-trip booking successful.");
-    }
-
-
-    // ================== SHOW BOOKINGS ==================
+    // ================= SHOW BOOKINGS =================
     public static void showBookings() {
         if (currentPassenger == null) {
             System.out.println("Login first.");
             return;
         }
 
-        if (currentPassenger.getBookings().isEmpty()) {
-            System.out.println("No bookings.");
-            return;
-        }
+        String sql =
+                "SELECT b.booking_id, b.booking_date, f.origin, f.destination " +
+                        "FROM bookings b JOIN flights f " +
+                        "ON b.outbound_flight_id = f.flight_id " +
+                        "WHERE b.passenger_id = ?";
 
-        for (Booking b : currentPassenger.getBookings()) {
-            System.out.println(
-                    "Booking ID: " + b.getBookingId() +
-                            " | Route: " + b.getRouteDescription() +
-                            " | Date: " + b.getBookingDate()
-            );
+        try (Connection con = DB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, currentPassenger.getPassengerId());
+            ResultSet rs = ps.executeQuery();
+
+            boolean hasBookings = false;
+
+            System.out.println("\n=== Your Bookings ===");
+
+            while (rs.next()) {
+                hasBookings = true;
+                System.out.println(
+                        "Booking ID: " + rs.getInt("booking_id") +
+                                " | Route: " + rs.getString("origin") +
+                                " -> " + rs.getString("destination") +
+                                " | Date: " + rs.getString("booking_date")
+                );
+            }
+
+            if (!hasBookings) {
+                System.out.println("You have no bookings yet.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    // ================== MENU ==================
+
+    // ================= MENU =================
     private static void passengerMenu() {
         System.out.println("\n1. Book Flight");
         System.out.println("2. View Bookings");
         System.out.println("3. Add Flight (Admin)");
         System.out.println("4. Logout");
 
-        int input = scanner.nextInt();
-
-        switch (input) {
+        switch (scanner.nextInt()) {
             case 1 -> addBooking();
             case 2 -> showBookings();
             case 3 -> addFlight();
@@ -232,18 +256,15 @@ public class AirlineReservationPortal {
         }
     }
 
-    // ================== MAIN ==================
+    // ================= MAIN =================
     public static void main(String[] args) {
-
         while (true) {
             if (currentPassenger == null) {
                 System.out.println("\n1. Register");
                 System.out.println("2. Login");
                 System.out.println("3. Exit");
 
-                int input = scanner.nextInt();
-
-                switch (input) {
+                switch (scanner.nextInt()) {
                     case 1 -> register();
                     case 2 -> login();
                     case 3 -> System.exit(0);
