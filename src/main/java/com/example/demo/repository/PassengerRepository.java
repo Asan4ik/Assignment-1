@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PassengerRepository extends JpaRepository<Passenger, Integer> {
-    // Spring will automatically implement basic CRUD (find, save, delete)
     Passenger findByEmail(String email);
 }

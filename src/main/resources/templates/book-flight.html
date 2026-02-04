@@ -1,0 +1,13 @@
+<h2>Book Your Flight</h2>
+<form action="/api/bookings/book" method="POST">
+    <label>Passenger ID:</label><br>
+    <input type="number" name="passengerId" required><br><br>
+
+    <label>Flight ID:</label><br>
+    <input type="number" name="flightId" th:value="${flightId}" required><br><br>
+
+    <label>Date:</label><br>
+    <input type="date" name="date" required><br><br>
+
+    <button type="submit" style="padding: 10px 20px; background: #27ae60; color: white; border: none;">Confirm Booking</button>
+</form>

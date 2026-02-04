@@ -16,11 +16,11 @@ public class FlightController {
 
     @GetMapping
     public List<Flight> getAllFlights() {
-        return flightRepository.findAll(); // Replaces getFlights() in your portal
+        return flightRepository.findAll();
     }
 
     @PostMapping("/add")
     public Flight addFlight(@RequestBody Flight flight) {
-        return flightRepository.save(flight); // Replaces addFlight() console logic
+        return flightRepository.save(flight);
     }
 }

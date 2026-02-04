@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 @Table(name = "bookings")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "booking_type")
-@Getter @Setter @NoArgsConstructor // Lombok handles empty constructor for JPA
+@Getter @Setter @NoArgsConstructor
 public abstract class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int bookingId;
+    private int id;
 
     @ManyToOne
     @JoinColumn(name = "passenger_id")
@@ -21,7 +21,6 @@ public abstract class Booking {
 
     private String bookingDate;
 
-    // Add this constructor for the subclasses to call via super()
     public Booking(Passenger passenger, String bookingDate) {
         this.passenger = passenger;
         this.bookingDate = bookingDate;

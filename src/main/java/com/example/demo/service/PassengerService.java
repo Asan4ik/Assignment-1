@@ -18,10 +18,10 @@ public class PassengerService {
     }
 
     public Optional<Passenger> getPassenger(int id) {
-        return passengerRepository.findById(id); // Queries the DB!
+        return passengerRepository.findById(id);
     }
 
     public Passenger registerPassenger(Passenger passenger) {
-        return passengerRepository.save(passenger); // Replaces your INSERT SQL
+        return passengerRepository.save(passenger);
     }
 }

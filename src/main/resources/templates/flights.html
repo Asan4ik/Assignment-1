@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Flight Schedule</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        th { background-color: #3498db; color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; color: #333; }
+        tr:hover { background-color: #f8f9fa; }
+        .btn-book { background: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 0.9rem; }
+        .btn-book:hover { background: #219150; }
+        .nav-back { margin-bottom: 15px; display: inline-block; color: #3498db; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Flight Schedule</h1>
+</div>
+
+<div class="container">
+    <a href="/" class="nav-back">← Back to Dashboard</a>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Flight No.</th>
+            <th>Origin</th>
+            <th>Destination</th>
+            <th>Available Seats</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="f : ${flights}">
+            <td style="font-weight: bold; color: #2c3e50;" th:text="${f.flightNumber}"></td>
+            <td th:text="${f.origin}"></td>
+            <td th:text="${f.destination}"></td>
+            <td>
+                <span th:text="${f.capacity}"></span>
+                <small th:if="${f.capacity <= 5}" style="color: red; margin-left: 5px;">(Low!)</small>
+            </td>
+            <td>
+                <a th:href="@{/book-flight-ui(flightId=${f.id})}" class="btn-book">Book Now</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

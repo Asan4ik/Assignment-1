@@ -15,7 +15,6 @@ public class OneWayBooking extends Booking {
     private Flight flight;
 
     public OneWayBooking(Passenger passenger, Flight flight, String date) {
-        // Calls the constructor we just added to Booking.java
         super(passenger, date);
         this.flight = flight;
     }
